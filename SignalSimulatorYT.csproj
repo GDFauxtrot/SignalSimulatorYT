@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net46</TargetFrameworks>
+    <AssemblyName>SignalSimulatorYT</AssemblyName>
+    <Description>Signal Simulator YouTube Mod</Description>
+    <Version>1.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Source\Editor\**" />
+    <EmbeddedResource Remove="Source\Editor\**" />
+    <None Remove="Source\Editor\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="netstandard" />
+    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.Core" Version="5.*" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
+    <PackageReference Include="UnityEngine.Modules" Version="2019.4.2" IncludeAssets="compile" />
+    <Reference Include="Assembly-CSharp" />
+    <Reference Include="UnityEngine.UI" />
+    <Reference Include="ZFBrowser" />
+    <Reference Include="SignalSimulatorYT.Shared" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
