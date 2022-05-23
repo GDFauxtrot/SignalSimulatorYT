@@ -27,6 +27,8 @@ namespace SignalSimulatorYT
 
             // In order for ModLogger to work properly
             Log = Logger;
+
+            // Debugging Harmony
             //HarmonyFileLog.Enabled = true;
 
             // Apply Harmony patches
@@ -47,9 +49,6 @@ namespace SignalSimulatorYT
             ModLogger.Log($"Plugin {Constants.PLUGIN_GUID} is loaded!");
 
             SceneManager.activeSceneChanged += OnSceneChanged;
-
-            // Manually notify ModSceneLoader that we're in the first scene
-            ModSceneLoader.SceneChanged("CompanyLogo");
         }
 
         void OnDestroy()
@@ -59,8 +58,11 @@ namespace SignalSimulatorYT
 
         void OnSceneChanged(Scene current, Scene next)
         {
-            // Inform SceneLoader of scene change so GameObjects can be properly loaded
-            ModSceneLoader.SceneChanged(next.name);
+            if (next.name == "Game")
+            {
+                GameObject newVHSUI = GameObject.Instantiate(ModAssets.GetAssetFromBundle<GameObject>("VHSModUI"));
+                newVHSUI.SetActive(false);
+            }
         }
 
         /// <summary>

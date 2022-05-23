@@ -8,6 +8,7 @@ using HarmonyLib;
 
 namespace SignalSimulator
 {
+    // Prevent BrowserCursor from loading assets. This lets us skip including things we don't need
     [HarmonyPatch(typeof(BrowserCursor), "Load")]
     class Patch_BrowserCursor_Load
     {
@@ -28,6 +29,7 @@ namespace SignalSimulator
         }
     }
 
+    // Prevent this function from doing anything
     [HarmonyPatch(typeof(BrowserCursor), nameof(BrowserCursor.SetActiveCursor))]
     class Patch_BrowserCursor_SetActiveCursor
     {

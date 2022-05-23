@@ -25,6 +25,7 @@ namespace SignalSimulatorYT
 
             ModLogger.Log($"InitAssets() completed! {loadedAssets.GetAllAssetNames().Length} asset(s) loaded.");
 
+            // Debugging
             //foreach (string name in loadedAssets.GetAllAssetNames())
             //{
             //    ModLogger.Log(name);
