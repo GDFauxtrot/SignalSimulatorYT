@@ -4,9 +4,7 @@ using BepInEx;
 using BepInEx.Logging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using HarmonyLib;
-using HarmonyLib.Tools;
 
 namespace SignalSimulatorYT
 {
