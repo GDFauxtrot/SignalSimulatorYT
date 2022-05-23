@@ -1,9 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using SignalSimulatorYT.Shared;
-using UnityEngine.EventSystems;
-using ZenFulcrum.EmbeddedBrowser;
 using HarmonyLib;
 using UnityEngine.UI;
 
@@ -25,7 +23,6 @@ namespace SignalSimulatorYT
 
             // Set up button callbacks
             VHSModUI.Instance.PresetSaveButton.onClick.AddListener(OnSavePressed);
-            VHSModUI.Instance.PresetLoadButton.onClick.AddListener(OnLoadPressed);
             VHSModUI.Instance.OpenLinkButton.onClick.AddListener(OnOpenPressed);
 
             // TODO remove the load button! Hide it for now
@@ -36,37 +33,55 @@ namespace SignalSimulatorYT
             browserBehavior = tvBrowserObject.AddComponent<BrowserBehavior>();
         }
 
+        public void AddNewListItem(string link, bool saveJson)
+        {
+            GameObject newItem = Instantiate(VHSModUI.Instance.ExamplePresetListItem);
+            newItem.transform.SetParent(VHSModUI.Instance.PresetListContent);
+            newItem.SetActive(true);
+            newItem.transform.localScale = Vector3.one; // idk what the fuck happened here?
+
+            VHSPresetListItem newItemData = newItem.GetComponent<VHSPresetListItem>();
+
+            int i = listItems.Count;
+
+            newItemData.backgroundButton.onClick.AddListener(delegate { OnListItemBackgroundPressed(i); });
+            newItemData.deleteButton.onClick.AddListener(delegate { OnListItemDeletePressed(i, true); });
+
+            newItemData.text.text = link;
+
+            listItems.Add(newItem);
+
+            if (saveJson)
+            {
+                WriteListToJson();
+            }
+        }
+
+        public void RemoveAllListItems()
+        {
+            for (int i = listItems.Count-1; i >= 0; --i)
+            {
+                // Clear the list top-to-bottom to avoid list resorting nonsense
+                OnListItemDeletePressed(i, false);
+            }
+        }
+
         void OnSavePressed()
         {
             if (!string.IsNullOrEmpty(VHSModUI.Instance.LinkInputField.text))
             {
-                GameObject newItem = Instantiate(VHSModUI.Instance.ExamplePresetListItem);
-                newItem.transform.SetParent(VHSModUI.Instance.PresetListContent);
-                newItem.SetActive(true);
-                newItem.transform.localScale = Vector3.one; // idk what the fuck happened here?
-
-                VHSPresetListItem newItemData = newItem.GetComponent<VHSPresetListItem>();
-
-                int i = listItems.Count;
-
-                newItemData.backgroundButton.onClick.AddListener(delegate { OnListItemBackgroundPressed(i); });
-                newItemData.deleteButton.onClick.AddListener(delegate { OnListItemDeletePressed(i); });
-
-                newItemData.text.text = VHSModUI.Instance.LinkInputField.text;
-
-                listItems.Add(newItem);
-                SetIndexSelected(i);
+                AddNewListItem(VHSModUI.Instance.LinkInputField.text, true);
+                SetIndexSelected(listItems.Count-1);
             }
-        }
-
-        void OnLoadPressed()
-        {
-            ModLogger.Log("LOAD (DELETE THIS BUTTON)");
         }
 
         void OnOpenPressed()
         {
-            ParseAndProcessLink(VHSModUI.Instance.LinkInputField.text);
+            string link = VHSModUI.Instance.LinkInputField.text;
+            if (!string.IsNullOrEmpty(link))
+            {
+                ParseAndProcessLink(link);
+            }
         }
 
         void OnListItemBackgroundPressed(int index)
@@ -76,7 +91,7 @@ namespace SignalSimulatorYT
             VHSModUI.Instance.LinkInputField.text = listItems[index].GetComponent<VHSPresetListItem>().text.text;
         }
 
-        void OnListItemDeletePressed(int index)
+        void OnListItemDeletePressed(int index, bool saveJson)
         {
             SetIndexSelected(-1);
 
@@ -95,11 +110,16 @@ namespace SignalSimulatorYT
                 listItems[i].GetComponent<VHSPresetListItem>().backgroundButton.onClick.AddListener(
                         delegate { OnListItemBackgroundPressed(varI); });
                 listItems[i].GetComponent<VHSPresetListItem>().deleteButton.onClick.AddListener(
-                        delegate { OnListItemDeletePressed(varI); });
+                        delegate { OnListItemDeletePressed(varI, true); });
+            }
+
+            if (saveJson)
+            {
+                WriteListToJson();
             }
         }
 
-        private void SetIndexSelected(int index)
+        void SetIndexSelected(int index)
         {
             if (currentSelectedIndex != -1)
                 listItems[currentSelectedIndex].GetComponent<VHSPresetListItem>().backgroundButton.OnDeselect(null);
@@ -144,8 +164,6 @@ namespace SignalSimulatorYT
                     }
                 }
 
-                ModLogger.Log("Playlist: " + playlistID);
-
                 // If no playlist found, then look for video ID
                 if (playlistID == "")
                 {
@@ -174,6 +192,10 @@ namespace SignalSimulatorYT
 
                 if (playlistID != "")
                 {
+                    TV.inst.TVOn = false;
+                    TV.inst.StartStopTV();
+                    vhsInputField.text = "";
+
                     browserBehavior.OpenURL(string.Format(playlistFormat, playlistID, extraArgs));
 
                     // Need to reset TV "open" state
@@ -182,19 +204,56 @@ namespace SignalSimulatorYT
                 }
                 else if (videoID != "")
                 {
+                    TV.inst.TVOn = false;
+                    TV.inst.StartStopTV();
+                    vhsInputField.text = "";
+
                     browserBehavior.OpenURL(string.Format(videoFormat, videoID, extraArgs)); 
 
                     // Need to reset TV "open" state
                     TV.VhsUIOpen();
-
                 }
             }
             else
             {
+                // Reset browser behavior
+                browserBehavior.OpenURL("");
+
+                // Force alignment with OG vhsStruct and our own list
+                WriteListToVHSStruct();
+
                 // Treat it like a file link and pass it off to the TV for handling
                 vhsInputField.text = link;
                 TV.inst.ApplyButtonTV();
             }
+        }
+
+        void WriteListToVHSStruct()
+        {
+            AccessTools.FieldRef<TV, VHSListContainer> vhsStructRef = AccessTools.FieldRefAccess<TV, VHSListContainer>("vhsStruct");
+
+            vhsStructRef(TV.inst).dataList.Clear();
+            for (int i = 0; i < listItems.Count; ++i)
+            {
+                VHSPresetListItem listItem = listItems[i].GetComponent<VHSPresetListItem>();
+                vhsStructRef(TV.inst).dataList.Add(new VHSstruct(listItem.text.text));
+            }
+        }
+
+        void WriteListToJson()
+        {
+            // Format list to Signal Sim's structs/data and write the exact same way it normally would
+            VHSListContainer vhsStruct = default;
+            vhsStruct.dataList = new List<VHSstruct>();
+
+            for (int i = 0; i < listItems.Count; ++i)
+            {
+                VHSPresetListItem listItem = listItems[i].GetComponent<VHSPresetListItem>();
+                vhsStruct.dataList.Add(new VHSstruct(listItem.text.text));
+            }
+
+            string contents = JsonUtility.ToJson(vhsStruct, true);
+            File.WriteAllText(Application.persistentDataPath + "/VHS.json", contents);
         }
     }
 }

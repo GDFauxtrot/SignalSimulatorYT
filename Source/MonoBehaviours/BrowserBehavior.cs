@@ -20,7 +20,7 @@ namespace SignalSimulatorYT
         public Browser tvBrowser;
         public PointerUIMesh browserPointer;
 
-        public float volume = 1f;
+        public float volume = 0f;
 
         public bool browserPageEmpty;
         public bool elementsHidden;
