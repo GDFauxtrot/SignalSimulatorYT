@@ -34,3 +34,7 @@ Included with each release is a compiled binary for the Windows version of ZFBro
   * Be sure to utilize the BepInEx log outputs to do any debugging work! There is also this handy page for dev tools: https://docs.bepinex.dev/articles/dev_guide/dev_tools.html
 
 After all these steps, you should have a working modification to this mod up and running!
+
+### I don't see the new VHS UI anywhere in code, where is it?
+
+The original VHS UI was replaced with a slightly different version and is included as a prefab in the asset bundle "signalsimulatoryt.assets". You can crack open the bundle with an install of Unity 2019.4.2 (the version Signal Simulator uses) and use the "Asset Bundle Browser" package. Also recommended for making your own asset bundles is this guide, you'll need to include a script they provide to your Unity project: https://api.raftmodding.com/modding-tutorials/how-to-create-an-assetbundle
